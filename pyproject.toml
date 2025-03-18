@@ -1,0 +1,132 @@
+[project]
+name = "TimeBound"
+version = "0.1.0"
+description = "Tool for analyzing and clustering LoL champions based on winrate patterns across game durations"
+authors = [
+    {name = "Christopher Castel", email = "contact@christophercastel.com"},
+]
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+dependencies = [
+    "numpy>=2.2.0",
+    "scipy>=1.13.0",
+    "pandas>=2.2.1",
+    "matplotlib>=3.9.0",
+    "seaborn>=0.13.2",
+    "networkx>=3.4.0",
+    "adjustText>=0.8.0",
+    "playwright>=1.41.0",
+    "asyncio>=3.4.3",
+    "scikit-learn>=1.6.0",
+    "python-dotenv>=1.0.1",
+    "pathlib>=1.0.1",
+    "tqdm>=4.67.0",
+    "plotly>=5.24.0",
+    "rich>=13.7.0",
+    "diagrams>=0.24.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+winrates = "src.main:main"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pytest>=8.3.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.11.0",
+    "mypy>=1.8.0",
+    "black>=24.2.0",
+]
+
+[tool.rye.scripts]
+test = "pytest"
+test-cov = "pytest --cov=src --cov-report=xml --cov-report=term-missing"
+lint = "ruff check src tests"
+format = "ruff format src tests"
+dev = "python -m src.main"
+typecheck = "mypy src tests"
+install-playwright = "playwright install chromium"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = [
+    ".git",
+    ".rye",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # flake8-bandit (security)
+    "S",
+    # flake8-comprehensions
+    "C4",
+    # pylint
+    "PL",
+    # type-checking
+    "ANN",
+    # pydocstyle
+    "D",
+]
+ignore = ["D203", "D212"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "PLR2004"]  # Allow assert in tests and magic number comparisons
+
+[tool.ruff.lint.pylint]
+max-args = 6
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --doctest-modules"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+] 
