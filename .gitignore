@@ -49,3 +49,7 @@ htmlcov/
 # OS specific files
 .DS_Store
 Thumbs.db 
+
+# Cursor specific files
+.cursorrules
+
