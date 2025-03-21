@@ -15,6 +15,8 @@ import numpy as np
 from src.utils.logger import error, info, warning
 
 COORD_PAIR_SIZE = 2
+MIN_TIME = 0
+MAX_TIME = 40
 
 
 class SVGPathParser:
@@ -108,10 +110,10 @@ class SVGPathParser:
         if reversed_points:
             # Find the maximum y value to use as reference
             max_y = max(y for _, y in reversed_points)
-
             # Invert y-coordinates (y = max_y - y)
             corrected_points = [(x, max_y - y) for x, y in reversed_points]
-            return corrected_points
+            
+            return self._transform_to_game_time(corrected_points)
 
         return []
 
@@ -390,3 +392,24 @@ class SVGPathParser:
         plt.savefig(filename, format=format, dpi=dpi)
         plt.close()
         info(f"Plot saved to {filename}")
+
+    def _transform_to_game_time(self, points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+        """
+        Transform SVG x-coordinates to actual game time minutes using linear mapping.
+        
+        The SVG x-coordinates are linearly mapped from their original range to the game time
+        range defined by MIN_TIME and MAX_TIME constants.
+        
+        Args:
+            points: List of (x,y) coordinate tuples
+            
+        Returns:
+            List of transformed (x,y) coordinate tuples with x representing actual game time minutes
+        """
+        x_coords, y_coords = np.array([x for x, _ in points]), np.array([y for _, y in points])
+        min_x, max_x = np.min(x_coords), np.max(x_coords)
+
+        # Linear transformation from original x range to game time range
+        game_times = MIN_TIME + (MAX_TIME - MIN_TIME) * (x_coords - min_x) / (max_x - min_x)
+
+        return list(zip(game_times, y_coords, strict=True))
