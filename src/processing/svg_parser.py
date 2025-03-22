@@ -17,7 +17,9 @@ from src.utils.logger import error, info, warning
 COORD_PAIR_SIZE = 2
 MIN_TIME = 15
 MAX_TIME = 40
-
+BASELINE_WINRATE = 50      
+MIN_WINRATE_DEVIATION = -10
+MAX_WINRATE_DEVIATION = 10 
 
 class SVGPathParser:
     """
@@ -71,6 +73,8 @@ class SVGPathParser:
         1. The points are reversed to correct the order (SVG paths are often defined from right to left)
         2. The y-coordinates are inverted to correct the orientation
            (in SVG, y increases downward, but we want y to increase upward for analysis)
+        3. X-coordinates are transformed to game time minutes (15-40)
+        4. Y-coordinates are transformed to win rate deviations from baseline (typically ±10%)
 
         Returns:
             List of (x,y) coordinate tuples representing the function graph
@@ -108,12 +112,12 @@ class SVGPathParser:
 
         # Invert the y-coordinates
         if reversed_points:
-            # Find the maximum y value to use as reference
             max_y = max(y for _, y in reversed_points)
             # Invert y-coordinates (y = max_y - y)
-            corrected_points = [(x, max_y - y) for x, y in reversed_points]
+            inverted_points = [(x, max_y - y) for x, y in reversed_points]
             
-            return self._transform_to_game_time(corrected_points)
+            time_points = self._transform_to_game_time(inverted_points)
+            return self._transform_to_winrate_deviation(time_points)
 
         return []
 
@@ -398,7 +402,7 @@ class SVGPathParser:
         Transform SVG x-coordinates to actual game time minutes using linear mapping.
         
         The SVG x-coordinates are linearly mapped from their original range to the game time
-        range defined by MIN_TIME and MAX_TIME constants.
+        range defined by MIN_TIME and MAX_TIME constants (15-40 minutes).
         
         Args:
             points: List of (x,y) coordinate tuples
@@ -415,7 +419,39 @@ class SVGPathParser:
         if min_x == max_x:
             return [(MAX_TIME, y) for y in y_coords]
 
-        # Linear transformation from original x range to game time range
+        # Linear transformation from original x range to game time range (15-40 minutes)
         game_times = MIN_TIME + (MAX_TIME - MIN_TIME) * (x_coords - min_x) / (max_x - min_x)
 
         return list(zip(game_times, y_coords, strict=True))
+    
+    def _transform_to_winrate_deviation(self, points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+        """
+        Transform SVG y-coordinates to normalized win rate deviations.
+        
+        The SVG y-coordinates are linearly mapped to represent deviations from 
+        the baseline win rate (typically 50%), with the range defined by 
+        MIN_WINRATE_DEVIATION and MAX_WINRATE_DEVIATION constants.
+        
+        This produces values that show relative performance differences between
+        champions rather than absolute win rate percentages. The final values can be
+        interpreted as: BASELINE_WINRATE + deviation (e.g., 50% ± 10%).
+        
+        Args:
+            points: List of (x,y) coordinate tuples
+            
+        Returns:
+            List of transformed (x,y) coordinate tuples with y representing win rate deviations
+        """
+        if not points:
+            return []
+            
+        x_coords, y_coords = np.array([x for x, _ in points]), np.array([y for _, y in points])
+        min_y, max_y = np.min(y_coords), np.max(y_coords)
+        
+        if min_y == max_y:
+            return [(x, 0.0) for x in x_coords]
+            
+        # Linear transformation from original y range to win rate deviation range
+        win_rate_devs = MIN_WINRATE_DEVIATION + (MAX_WINRATE_DEVIATION - MIN_WINRATE_DEVIATION) * (y_coords - min_y) / (max_y - min_y)
+        
+        return list(zip(x_coords, win_rate_devs, strict=True))
