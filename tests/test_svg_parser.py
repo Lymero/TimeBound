@@ -6,7 +6,6 @@ from typing import List, Tuple, Any
 from src.processing.svg_parser import SVGPathParser
 
 
-# Test fixtures
 @pytest.fixture
 def simple_path() -> str:
     """Simple path with move and line commands."""
@@ -74,9 +73,9 @@ def test_parse_path_complex(complex_path: str) -> None:
     assert len(points) > 10
 
     # First and last points should map to MIN_TIME and MAX_TIME with y-inversion
-    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][0] == pytest.approx(40, abs=0.1)  
     assert points[0][1] == pytest.approx(0, abs=0.1)
-    assert points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[-1][0] == pytest.approx(0, abs=0.1)  
     assert points[-1][1] == pytest.approx(120, abs=0.1)
 
 
@@ -118,9 +117,9 @@ def test_cubic_bezier_command(cubic_bezier_path: str) -> None:
     assert len(points) == 11  # Start point + 10 points from the curve
 
     # Start and end points map to time range with y-inversion
-    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][0] == pytest.approx(40, abs=0.1)  
     assert points[0][1] == pytest.approx(0, abs=0.1)
-    assert points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[-1][0] == pytest.approx(0, abs=0.1)  
     assert points[-1][1] == pytest.approx(60, abs=0.1)
 
     # Middle point should be in middle of time range
@@ -138,9 +137,9 @@ def test_quadratic_bezier_command(quadratic_bezier_path: str) -> None:
     assert len(points) == 11  # Start point + 10 points from the curve
 
     # Start and end points map to time range with y-inversion
-    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][0] == pytest.approx(40, abs=0.1)  
     assert points[0][1] == pytest.approx(0, abs=0.1)
-    assert points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[-1][0] == pytest.approx(0, abs=0.1)  
     assert points[-1][1] == pytest.approx(40, abs=0.1)
 
     # Middle point should be in middle of time range
@@ -157,11 +156,11 @@ def test_relative_line_command(relative_path: str) -> None:
 
     # Points map to time range
     assert len(points) == 3
-    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][0] == pytest.approx(40, abs=0.1)  
     assert points[0][1] == pytest.approx(0, abs=0.1)
     assert points[1][0] == pytest.approx(20, abs=5)  # Middle point maps to middle of time
     assert points[1][1] == pytest.approx(0, abs=0.1)
-    assert points[2][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[2][0] == pytest.approx(0, abs=0.1)  
     assert points[2][1] == pytest.approx(20, abs=0.1)
 
 
@@ -173,11 +172,11 @@ def test_relative_move_command() -> None:
 
     # Points map to time range
     assert len(points) == 3
-    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][0] == pytest.approx(40, abs=0.1)  
     assert points[0][1] == pytest.approx(0, abs=0.1)
     assert points[1][0] == pytest.approx(20, abs=10)  # Middle point maps to middle of time
     assert points[1][1] == pytest.approx(10, abs=0.1)
-    assert points[2][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[2][0] == pytest.approx(0, abs=0.1)  
     assert points[2][1] == pytest.approx(30, abs=0.1)
 
 
@@ -187,11 +186,11 @@ def test_mixed_absolute_relative_commands(mixed_path: str) -> None:
     points = parser.parse_path()
 
     # Check key points - all x coordinates map to time range
-    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][0] == pytest.approx(40, abs=0.1)  
     assert points[0][1] == pytest.approx(0, abs=0.1)
     assert points[-2][0] <= 20  # Original second point maps to lower half of time range
     assert points[-2][1] == pytest.approx(20, abs=0.1)
-    assert points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[-1][0] == pytest.approx(0, abs=0.1)  
     assert points[-1][1] == pytest.approx(30, abs=0.1)
 
 
@@ -225,9 +224,9 @@ def test_bezier_curve_interpolation_accuracy() -> None:
     cubic_points = parser.parse_path()
 
     # 1. Check start and end points map to time range
-    assert cubic_points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert cubic_points[0][0] == pytest.approx(40, abs=0.1)  
     assert cubic_points[0][1] == pytest.approx(0, abs=0.1)
-    assert cubic_points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert cubic_points[-1][0] == pytest.approx(0, abs=0.1)  
     assert cubic_points[-1][1] == pytest.approx(60, abs=0.1)
 
     # 2. Check that a reasonable number of points are generated
@@ -249,9 +248,9 @@ def test_bezier_curve_interpolation_accuracy() -> None:
     quad_points = parser.parse_path()
 
     # 1. Check start and end points map to time range
-    assert quad_points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert quad_points[0][0] == pytest.approx(40, abs=0.1)  
     assert quad_points[0][1] == pytest.approx(0, abs=0.1)
-    assert quad_points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert quad_points[-1][0] == pytest.approx(0, abs=0.1)  
     assert quad_points[-1][1] == pytest.approx(40, abs=0.1)
 
     # 2. Check that a reasonable number of points are generated
