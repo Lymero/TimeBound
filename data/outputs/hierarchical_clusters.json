@@ -68,7 +68,7 @@
     "yuumi",
     "zeri"
   ],
-  "2": [
+  "0": [
     "amumu",
     "bard",
     "fiddlesticks",
@@ -80,10 +80,9 @@
     "urgot",
     "ahri"
   ],
-  "0": [
+  "6": [
     "anivia",
     "ashe",
-    "briar",
     "diana",
     "garen",
     "jayce",
@@ -122,7 +121,7 @@
     "xerath",
     "yorick"
   ],
-  "6": [
+  "2": [
     "blitzcrank",
     "ivern",
     "kennen",
@@ -157,6 +156,9 @@
     "wukong",
     "xinzhao",
     "zilean"
+  ],
+  "17": [
+    "briar"
   ],
   "1": [
     "darius",
