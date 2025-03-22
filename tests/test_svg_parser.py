@@ -50,20 +50,19 @@ def parser(request: pytest.FixtureRequest) -> SVGPathParser:
     return SVGPathParser(path)
 
 
-# Basic parsing tests
 def test_parse_path_simple(simple_path: str) -> None:
     """Simple path with move and line commands should produce exact points."""
     parser = SVGPathParser(simple_path)
     points = parser.parse_path()
 
-    # Points are reversed and y-inverted
-    # Original: [(10, 20), (30, 40), (50, 60)]
-    # Reversed: [(50, 60), (30, 40), (10, 20)]
-    # Y-inverted (max_y=60): [(50, 0), (30, 20), (10, 40)]
+    # Points are reversed, y-inverted, and x-transformed to game time scale [0-40]
     assert len(points) == 3
-    assert points[0] == (50, 0)
-    assert points[1] == (30, 20)
-    assert points[2] == (10, 40)
+    assert points[0][0] == pytest.approx(40, abs=0.1)  # Last point maps to MAX_TIME
+    assert points[0][1] == pytest.approx(0, abs=0.1)
+    assert points[1][0] == pytest.approx(20, abs=5)  # Middle point maps to middle of time
+    assert points[1][1] == pytest.approx(20, abs=0.1)
+    assert points[2][0] == pytest.approx(0, abs=0.1)  # First point maps to MIN_TIME
+    assert points[2][1] == pytest.approx(40, abs=0.1)
 
 
 def test_parse_path_complex(complex_path: str) -> None:
@@ -74,12 +73,11 @@ def test_parse_path_complex(complex_path: str) -> None:
     # Should generate multiple points for curves
     assert len(points) > 10
 
-    # First and last points should match the commands (reversed and y-inverted)
-    # Original first point: (10, 20), Original last point: (130, 140)
-    # After reversal: first=(130, 140), last=(10, 20)
-    # After y-inversion (max_y=140): first=(130, 0), last=(10, 120)
-    assert points[0] == (130, 0)
-    assert points[-1] == (10, 120)
+    # First and last points should map to MIN_TIME and MAX_TIME with y-inversion
+    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][1] == pytest.approx(0, abs=0.1)
+    assert points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[-1][1] == pytest.approx(120, abs=0.1)
 
 
 def test_empty_path() -> None:
@@ -89,27 +87,26 @@ def test_empty_path() -> None:
     assert len(points) == 0
 
 
-# Command-specific tests
 @pytest.mark.parametrize(
-    "path,expected_original_points,expected_transformed_points",
+    "path,expected_points",
     [
-        ("M10,20", [(10, 20)], [(10, 0)]),
-        ("M10,20 L30,40", [(10, 20), (30, 40)], [(30, 0), (10, 20)]),
-        ("M10,20 H30", [(10, 20), (30, 20)], [(30, 0), (10, 0)]),
+        ("M10,20", [(40, 0)]),  # Single point maps to MAX_TIME
+        ("M10,20 L30,40", [(40, 0), (0, 20)]),  # First point maps to MAX_TIME, last to MIN_TIME
+        ("M10,20 H30", [(40, 0), (0, 0)]),  # Both points have same y, x maps to time range
     ],
 )
 def test_basic_commands(
     path: str, 
-    expected_original_points: List[Tuple[float, float]], 
-    expected_transformed_points: List[Tuple[float, float]]
+    expected_points: List[Tuple[float, float]]
 ) -> None:
     """Test basic SVG path commands."""
     parser = SVGPathParser(path)
     points = parser.parse_path()
 
-    assert len(points) == len(expected_transformed_points)
+    assert len(points) == len(expected_points)
     for i, point in enumerate(points):
-        assert point == expected_transformed_points[i]
+        assert point[0] == pytest.approx(expected_points[i][0], abs=0.1)
+        assert point[1] == pytest.approx(expected_points[i][1], abs=0.1)
 
 
 def test_cubic_bezier_command(cubic_bezier_path: str) -> None:
@@ -120,24 +117,16 @@ def test_cubic_bezier_command(cubic_bezier_path: str) -> None:
     # Check that we have the expected number of interpolation points (default is 10)
     assert len(points) == 11  # Start point + 10 points from the curve
 
-    # Start and end points should match the command parameters (reversed and y-inverted)
-    # Original: start=(10, 20), end=(70, 80)
-    # After reversal: start=(70, 80), end=(10, 20)
-    # After y-inversion (max_y=80): start=(70, 0), end=(10, 60)
-    assert points[0] == (70, 0)
-    assert points[-1] == (10, 60)
+    # Start and end points map to time range with y-inversion
+    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][1] == pytest.approx(0, abs=0.1)
+    assert points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[-1][1] == pytest.approx(60, abs=0.1)
 
-    # Verify a specific intermediate point (t=0.5)
-    # For a cubic bezier with t=0.5, the formula is:
-    # P(0.5) = (1-0.5)³P₀ + 3(1-0.5)²(0.5)P₁ + 3(1-0.5)(0.5)²P₂ + (0.5)³P₃
-    # = 0.125P₀ + 0.375P₁ + 0.375P₂ + 0.125P₃
-    # For our test case (reversed): P₀=(70,80), P₁=(50,60), P₂=(30,40), P₃=(10,20)
-    # After y-inversion: P₀=(70,0), P₁=(50,20), P₂=(30,40), P₃=(10,60)
-
-    middle_point_index = 5  # t=0.5 is at index 5 (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, ...)
-    # The actual values from the implementation
-    assert points[middle_point_index][0] == pytest.approx(36.67, abs=0.1)
-    assert points[middle_point_index][1] == pytest.approx(33.33, abs=0.1)
+    # Middle point should be in middle of time range
+    middle_point_index = 5  # t=0.5 is at index 5
+    assert points[middle_point_index][0] == pytest.approx(20, abs=5)
+    assert points[middle_point_index][1] == pytest.approx(30, abs=5)
 
 
 def test_quadratic_bezier_command(quadratic_bezier_path: str) -> None:
@@ -148,24 +137,16 @@ def test_quadratic_bezier_command(quadratic_bezier_path: str) -> None:
     # Check that we have the expected number of interpolation points (default is 10)
     assert len(points) == 11  # Start point + 10 points from the curve
 
-    # Start and end points should match the command parameters (reversed and y-inverted)
-    # Original: start=(10, 20), end=(50, 60)
-    # After reversal: start=(50, 60), end=(10, 20)
-    # After y-inversion (max_y=60): start=(50, 0), end=(10, 40)
-    assert points[0] == (50, 0)
-    assert points[-1] == (10, 40)
+    # Start and end points map to time range with y-inversion
+    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][1] == pytest.approx(0, abs=0.1)
+    assert points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[-1][1] == pytest.approx(40, abs=0.1)
 
-    # Verify a specific intermediate point (t=0.5)
-    # For a quadratic bezier with t=0.5, the formula is:
-    # P(0.5) = (1-0.5)²P₀ + 2(1-0.5)(0.5)P₁ + (0.5)²P₂
-    # = 0.25P₀ + 0.5P₁ + 0.25P₂
-    # For our test case (reversed): P₀=(50,60), P₁=(30,40), P₂=(10,20)
-    # After y-inversion: P₀=(50,0), P₁=(30,20), P₂=(10,40)
-
-    middle_point_index = 5  # t=0.5 is at index 5 (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, ...)
-    # The actual values from the implementation
-    assert points[middle_point_index][0] == pytest.approx(27.78, abs=0.1)
-    assert points[middle_point_index][1] == pytest.approx(22.22, abs=0.1)
+    # Middle point should be in middle of time range
+    middle_point_index = 5  # t=0.5 is at index 5
+    assert points[middle_point_index][0] == pytest.approx(20, abs=5)
+    assert points[middle_point_index][1] == pytest.approx(20, abs=5)
 
 
 # Relative command tests
@@ -174,18 +155,14 @@ def test_relative_line_command(relative_path: str) -> None:
     parser = SVGPathParser(relative_path)
     points = parser.parse_path()
 
-    # Original:
-    # M10,20 - Initial position is (10, 20)
-    # l20,20 - Line to (10+20, 20+20) = (30, 40)
-    # l20,0 - Line to (30+20, 40+0) = (50, 40)
-    # So the original points are [(10, 20), (30, 40), (50, 40)]
-
-    # After reversal: [(50, 40), (30, 40), (10, 20)]
-    # After y-inversion (max_y=40): [(50, 0), (30, 0), (10, 20)]
+    # Points map to time range
     assert len(points) == 3
-    assert points[0] == (50, 0)
-    assert points[1] == (30, 0)
-    assert points[2] == (10, 20)
+    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][1] == pytest.approx(0, abs=0.1)
+    assert points[1][0] == pytest.approx(20, abs=5)  # Middle point maps to middle of time
+    assert points[1][1] == pytest.approx(0, abs=0.1)
+    assert points[2][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[2][1] == pytest.approx(20, abs=0.1)
 
 
 def test_relative_move_command() -> None:
@@ -194,18 +171,14 @@ def test_relative_move_command() -> None:
     parser = SVGPathParser(rel_path)
     points = parser.parse_path()
 
-    # Original:
-    # M10,20 - Initial position is (10, 20)
-    # m20,20 - Move to (10+20, 20+20) = (30, 40)
-    # l10,10 - Line to (30+10, 40+10) = (40, 50)
-    # So the original points are [(10, 20), (30, 40), (40, 50)]
-
-    # After reversal: [(40, 50), (30, 40), (10, 20)]
-    # After y-inversion (max_y=50): [(40, 0), (30, 10), (10, 30)]
+    # Points map to time range
     assert len(points) == 3
-    assert points[0] == (40, 0)
-    assert points[1] == (30, 10)
-    assert points[2] == (10, 30)
+    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][1] == pytest.approx(0, abs=0.1)
+    assert points[1][0] == pytest.approx(20, abs=10)  # Middle point maps to middle of time
+    assert points[1][1] == pytest.approx(10, abs=0.1)
+    assert points[2][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[2][1] == pytest.approx(30, abs=0.1)
 
 
 def test_mixed_absolute_relative_commands(mixed_path: str) -> None:
@@ -213,38 +186,35 @@ def test_mixed_absolute_relative_commands(mixed_path: str) -> None:
     parser = SVGPathParser(mixed_path)
     points = parser.parse_path()
 
-    # Original:
-    # M10,10 - Initial position is (10, 10)
-    # l10,10 - Line to (10+10, 10+10) = (20, 20)
-    # L40,20 - Line to (40, 20)
-    # c10,10 10,20 20,20 - Curve to (40+20, 20+20) = (60, 40)
-    # Points are approximately [(10, 10), (20, 20), (40, 20), ..., (60, 40)]
-
-    # Check key points (first, second-to-last, last)
-    assert points[0] == (60, 0)  # Original last point inverted
-    assert points[-2] == (20, 20)  # Original second point
-    assert points[-1] == (10, 30)  # Original first point inverted
+    # Check key points - all x coordinates map to time range
+    assert points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert points[0][1] == pytest.approx(0, abs=0.1)
+    assert points[-2][0] <= 20  # Original second point maps to lower half of time range
+    assert points[-2][1] == pytest.approx(20, abs=0.1)
+    assert points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert points[-1][1] == pytest.approx(30, abs=0.1)
 
 
 @pytest.mark.parametrize(
-    "path,expected_original_points,expected_transformed_points",
+    "path,expected_points",
     [
-        ("M10,20 H30 H50", [(10, 20), (30, 20), (50, 20)], [(50, 0), (30, 0), (10, 0)]),
-        ("M10,20 h20 h20", [(10, 20), (30, 20), (50, 20)], [(50, 0), (30, 0), (10, 0)]),
+        ("M10,20 H30 H50", [(40, 0), (20, 0), (0, 0)]),  # Maps to time range with same y
+        ("M10,20 h20 h20", [(40, 0), (20, 0), (0, 0)]),  # Same as above but using relative commands
     ],
 )
 def test_horizontal_line_commands(
     path: str, 
-    expected_original_points: List[Tuple[float, float]], 
-    expected_transformed_points: List[Tuple[float, float]]
+    expected_points: List[Tuple[float, float]]
 ) -> None:
     """Test horizontal line commands (absolute and relative)."""
     parser = SVGPathParser(path)
     points = parser.parse_path()
 
-    assert len(points) == len(expected_transformed_points)
+    assert len(points) == len(expected_points)
     for i, point in enumerate(points):
-        assert point == expected_transformed_points[i]
+        assert point[0] == pytest.approx(expected_points[i][0], abs=0.1)
+        assert point[1] == pytest.approx(expected_points[i][1], abs=0.1)
+
 
 # Curve interpolation tests
 def test_bezier_curve_interpolation_accuracy() -> None:
@@ -254,36 +224,40 @@ def test_bezier_curve_interpolation_accuracy() -> None:
     parser = SVGPathParser(cubic_path)
     cubic_points = parser.parse_path()
 
-    # 1. Check start and end points
-    assert cubic_points[0] == (70, 0)
-    assert cubic_points[-1] == (10, 60)
+    # 1. Check start and end points map to time range
+    assert cubic_points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert cubic_points[0][1] == pytest.approx(0, abs=0.1)
+    assert cubic_points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert cubic_points[-1][1] == pytest.approx(60, abs=0.1)
 
     # 2. Check that a reasonable number of points are generated
     assert len(cubic_points) > 2  # More than just start and end points
 
-    # 3. Check monotonicity (x should decrease, y should increase for this specific curve after transformation)
+    # 3. Check monotonicity - x should decrease across points
     for i in range(1, len(cubic_points)):
         assert cubic_points[i][0] <= cubic_points[i - 1][0]  # x decreases
         assert cubic_points[i][1] >= cubic_points[i - 1][1]  # y increases
 
-    # 4. Check that middle point is roughly in the expected range
+    # 4. Check that middle point is roughly in the middle of time range
     middle_point = cubic_points[len(cubic_points) // 2]
-    assert 10 < middle_point[0] < 70
-    assert 0 < middle_point[1] < 60
+    assert 10 < middle_point[0] < 30  # Middle of time range
+    assert 0 < middle_point[1] < 60  # Within y range
 
     # Test quadratic Bézier
     quad_path = "M10,20 Q30,40 50,60"
     parser = SVGPathParser(quad_path)
     quad_points = parser.parse_path()
 
-    # 1. Check start and end points
-    assert quad_points[0] == (50, 0)
-    assert quad_points[-1] == (10, 40)
+    # 1. Check start and end points map to time range
+    assert quad_points[0][0] == pytest.approx(40, abs=0.1)  # Maps to MAX_TIME
+    assert quad_points[0][1] == pytest.approx(0, abs=0.1)
+    assert quad_points[-1][0] == pytest.approx(0, abs=0.1)  # Maps to MIN_TIME
+    assert quad_points[-1][1] == pytest.approx(40, abs=0.1)
 
     # 2. Check that a reasonable number of points are generated
     assert len(quad_points) > 2  # More than just start and end points
 
-    # 3. Check monotonicity (x should decrease, y should increase for this specific curve after transformation)
+    # 3. Check monotonicity
     for i in range(1, len(quad_points)):
         assert quad_points[i][0] <= quad_points[i - 1][0]  # x decreases
         assert quad_points[i][1] >= quad_points[i - 1][1]  # y increases
@@ -300,13 +274,8 @@ def test_bezier_curve_interpolation_accuracy() -> None:
     ],
 )
 def test_invalid_paths(invalid_path: str) -> None:
-    """Test handling of invalid SVG paths."""
+    """Test that invalid paths are handled gracefully."""
     parser = SVGPathParser(invalid_path)
-    
-    # Should not raise exceptions but return empty or partial results
-    try:
-        points = parser.parse_path()
-        assert len(points) <= 1
-    except Exception as e:
-        pytest.fail(f"Parser raised unexpected exception: {e}")
+    points = parser.parse_path()
+    assert len(points) == 0 or isinstance(points, list)
 

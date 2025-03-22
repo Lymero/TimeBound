@@ -406,8 +406,14 @@ class SVGPathParser:
         Returns:
             List of transformed (x,y) coordinate tuples with x representing actual game time minutes
         """
+        if not points:
+            return []
+            
         x_coords, y_coords = np.array([x for x, _ in points]), np.array([y for _, y in points])
         min_x, max_x = np.min(x_coords), np.max(x_coords)
+
+        if min_x == max_x:
+            return [(MAX_TIME, y) for y in y_coords]
 
         # Linear transformation from original x range to game time range
         game_times = MIN_TIME + (MAX_TIME - MIN_TIME) * (x_coords - min_x) / (max_x - min_x)
