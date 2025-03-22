@@ -371,9 +371,9 @@ class ClusterVisualizer:
                     x, y = zip(*points, strict=False)
                     plt.plot(x, y, label=champion, alpha=0.7, color=colormap(i))
 
-            plt.title(f"Win Rate Profiles for Cluster {cluster_id}")
+            plt.title(f"Performance Trend Profiles for Cluster {cluster_id}")
             plt.xlabel("Game Length (minutes)")
-            plt.ylabel("Win Rate")
+            plt.ylabel("Relative Champion Strength")
             plt.grid(True, linestyle="--", alpha=0.7)
 
             # Place legend outside the plot to the right
