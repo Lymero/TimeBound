@@ -1,7 +1,6 @@
 """Tests for the SVG Path Parser using pytest."""
 
 import pytest
-from typing import List, Tuple, Any
 
 from src.processing.svg_parser import SVGPathParser
 
@@ -96,7 +95,7 @@ def test_empty_path() -> None:
 )
 def test_basic_commands(
     path: str, 
-    expected_points: List[Tuple[float, float]]
+    expected_points: list[tuple[float, float]]
 ) -> None:
     """Test basic SVG path commands."""
     parser = SVGPathParser(path)
@@ -203,7 +202,7 @@ def test_mixed_absolute_relative_commands(mixed_path: str) -> None:
 )
 def test_horizontal_line_commands(
     path: str, 
-    expected_points: List[Tuple[float, float]]
+    expected_points: list[tuple[float, float]]
 ) -> None:
     """Test horizontal line commands (absolute and relative)."""
     parser = SVGPathParser(path)
