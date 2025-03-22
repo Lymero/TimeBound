@@ -113,7 +113,7 @@ class ClusterVisualizer:
         champions: list[str],
         distance_matrix: np.ndarray,
         champion_to_cluster: dict[str, int],
-        title: str = "Champion Clusters based on Win Rate vs Game Length",
+        title: str = "Champion Clusters based on Performance Trends vs Game Length",
         output_path: str | None = None,
         figsize: tuple[int, int] | None = None,
         text_size: int = 8,
@@ -228,7 +228,7 @@ class ClusterVisualizer:
         champions: list[str],
         distance_matrix: np.ndarray,
         champion_to_cluster: dict[str, int],
-        title: str = "Champion Clusters based on Win Rate vs Game Length",
+        title: str = "Champion Clusters based on Performance Trends vs Game Length",
         output_path: str | None = None,
         point_size: int = 12,
     ) -> None:
