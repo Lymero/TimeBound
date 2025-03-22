@@ -15,7 +15,7 @@ import numpy as np
 from src.utils.logger import error, info, warning
 
 COORD_PAIR_SIZE = 2
-MIN_TIME = 0
+MIN_TIME = 15
 MAX_TIME = 40
 
 
