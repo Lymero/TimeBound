@@ -11,15 +11,16 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from sklearn.metrics import silhouette_score
 from tqdm import tqdm
 
 from src.analysis.graph_correlation import compare
 from src.processing.svg_parser import SVGPathParser
 from src.utils.logger import error, info, warning
 
+from .clustering_types import ClusterStats
 from .factory import ClusteringStrategyFactory
 from .strategies.base import ClusteringStrategy
-from .types import ClusterStats
 
 DEFAULT_SVG_PATHS_FILE = os.environ.get(
     "WINRATES_SVG_PATHS_FILE", "data/champion_svg_paths.json"
@@ -171,7 +172,7 @@ class ChampionPathClusterer:
 
         Returns:
             Appropriate number of clusters to use
-        """  # noqa: E501
+        """
         # Determine number of clusters if not specified
         if n_clusters is None or n_clusters <= 0:
             n_clusters = max(3, int(len(champions) * DEFAULT_CLUSTER_RATIO))
@@ -187,12 +188,13 @@ class ChampionPathClusterer:
 
         return n_clusters
 
-    def cluster_champions(self, n_clusters: int = 0) -> dict[int, list[str]]:
+    def cluster_champions(self, n_clusters: int = 0, evaluate: bool = False) -> dict[int, list[str]]:
         """
         Cluster champions based on their graph similarities using the current strategy.
 
         Args:
             n_clusters: Number of clusters to create (0 or None for automatic determination)
+            evaluate: Whether to compute and log the Silhouette Score
 
         Returns:
             Dictionary mapping cluster IDs to lists of champions
@@ -220,11 +222,45 @@ class ChampionPathClusterer:
                     self.correlation_matrix, n_clusters
                 )
 
+            if evaluate:
+                silhouette_avg = self.compute_silhouette_score()
+                if silhouette_avg is not None:
+                    info(f"Clustering Silhouette Score: {silhouette_avg:.4f}")
+
             return self.clusters
 
         except Exception as e:
             error(f"Unhandled exception in cluster_champions: {e}")
             return {}
+
+    def compute_silhouette_score(self) -> float | None:
+        """
+        Compute the average Silhouette Score for the current clustering.
+
+        Returns:
+            The average Silhouette Score
+        """
+        champions = list(self.correlation_matrix.keys())
+        distance_matrix = self.clustering_strategy.create_distance_matrix(
+            self.correlation_matrix, champions
+        )
+
+        champion_to_id = {name: i for i, name in enumerate(champions)}
+        labels = [0] * len(champions)
+
+        for cluster_id, champions_in_cluster in self.clusters.items():
+            for champion in champions_in_cluster:
+                labels[champion_to_id[champion]] = cluster_id
+
+        try:
+            score = silhouette_score(distance_matrix, labels, metric="precomputed")
+            return score
+        except ValueError as e:
+             error(f"Could not compute Silhouette Score: {e}")
+             return None
+        except Exception as e:
+             error(f"Unexpected error computing Silhouette Score: {e}")
+             return None
 
     def get_similar_champions(
         self, champion: str, threshold: float | None = None

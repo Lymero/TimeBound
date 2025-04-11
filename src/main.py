@@ -107,7 +107,7 @@ def parse_arguments() -> argparse.Namespace:
     cluster_parser.add_argument(
         "--n-clusters",
         type=int,
-        default=0,
+        default=15,
         help="Number of clusters to create (0 for automatic determination)",
     )
     cluster_parser.add_argument(
@@ -138,6 +138,11 @@ def parse_arguments() -> argparse.Namespace:
         "--interactive",
         action="store_true",
         help="Generate interactive HTML visualizations",
+    )
+    cluster_parser.add_argument(
+        "--evaluate",
+        action="store_true",
+        help="Compute and display the Silhouette Score for the clustering result",
     )
     
     # General options
@@ -354,8 +359,10 @@ def cluster_champions(args: argparse.Namespace) -> None:
         
     # Otherwise, perform clustering
     info(f"Clustering champions using {args.clustering_method} method...")
-    n_clusters = args.n_clusters if args.n_clusters > 0 else None
-    clusters = clusterer.cluster_champions(n_clusters)
+    clusters = clusterer.cluster_champions(
+        n_clusters=args.n_clusters,
+        evaluate=args.evaluate
+    )
     
     # Print cluster results
     info(f"Found {len(clusters)} clusters:")

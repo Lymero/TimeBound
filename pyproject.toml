@@ -52,6 +52,7 @@ format = "ruff format src tests"
 dev = "python -m src.main"
 typecheck = "mypy src tests"
 install-playwright = "playwright install chromium"
+evaluate-clustering = "python -m src.analysis.champion_path_clustering.evaluate_clustering"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]

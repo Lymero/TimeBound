@@ -3,11 +3,11 @@
 __version__ = "0.1.0"
 
 from .clusterer import ChampionPathClusterer
+from .clustering_types import ClusterStats
 from .factory import ClusteringStrategyFactory, StrategyType
 from .strategies.base import BaseClusteringStrategy, ClusteringStrategy
 from .strategies.hierarchical import HierarchicalClusteringStrategy
 from .strategies.spectral import SpectralClusteringStrategy
-from .types import ClusterStats
 
 __all__ = [
     "BaseClusteringStrategy",
