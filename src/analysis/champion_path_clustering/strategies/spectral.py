@@ -11,8 +11,37 @@ from .base import BaseClusteringStrategy
 class SpectralClusteringStrategy(BaseClusteringStrategy):
     """Strategy for spectral clustering of champions."""
 
+    def create_connectivity_matrix(
+        self, correlation_matrix: dict[str, dict[str, float]], champions: list[str], correlation_threshold: float = 0.7
+    ) -> np.ndarray:
+        """
+        Create a connectivity matrix based on correlation threshold.
+        
+        Args:
+            correlation_matrix: Dictionary mapping champion names to dictionaries of correlations
+            champions: List of champion names to include in the matrix
+            correlation_threshold: Minimum correlation required for champions to be connected
+            
+        Returns:
+            NumPy array containing the connectivity matrix
+        """
+        n = len(champions)
+        connectivity = np.zeros((n, n))
+        
+        for i, champ1 in enumerate(champions):
+            connectivity[i, i] = 1
+            
+            for j, champ2 in enumerate(champions):
+                if i != j and correlation_matrix[champ1][champ2] >= correlation_threshold:
+                    connectivity[i, j] = 1
+        
+        info(f"Created connectivity matrix with threshold {correlation_threshold}, "
+             f"connectivity density: {connectivity.sum() / (n * n):.2%}")
+        
+        return connectivity
+
     def cluster(
-        self, correlation_matrix: dict[str, dict[str, float]], n_clusters: int
+        self, correlation_matrix: dict[str, dict[str, float]], n_clusters: int, correlation_threshold: float = 0.7
     ) -> dict[int, list[str]]:
         """
         Cluster champions based on their graph similarities using spectral clustering.
@@ -24,25 +53,18 @@ class SpectralClusteringStrategy(BaseClusteringStrategy):
         Args:
             correlation_matrix: Dictionary mapping champion names to dictionaries of correlations
             n_clusters: Number of clusters to create
+            correlation_threshold: Minimum correlation for champions to be considered connected
 
         Returns:
             Dictionary mapping cluster IDs to lists of champions
         """
         champions = list(correlation_matrix.keys())
-        info(f"Performing spectral clustering on {len(champions)} champions with n_clusters={n_clusters}")
-
-        correlation_array = np.array(
-            [
-                [correlation_matrix[champ1][champ2] for champ2 in champions]
-                for champ1 in champions
-            ]
+        info(f"Performing spectral clustering on {len(champions)} champions with n_clusters={n_clusters}, "
+             f"correlation_threshold={correlation_threshold}")
+             
+        connectivity_matrix = self.create_connectivity_matrix(
+            correlation_matrix, champions, correlation_threshold
         )
-
-        # Transform correlation to a positive value in [0, 1]
-        affinity_matrix = (correlation_array + 1) / 2
-
-        # Ensure the matrix is symmetric and has a proper diagonal
-        np.fill_diagonal(affinity_matrix, 1.0)
 
         try:
             spectral = SpectralClustering(
@@ -54,7 +76,7 @@ class SpectralClusteringStrategy(BaseClusteringStrategy):
                 eigen_solver="arpack",
             )
 
-            cluster_labels = spectral.fit_predict(affinity_matrix)
+            cluster_labels = spectral.fit_predict(connectivity_matrix)
             info(f"Spectral clustering completed with {len(set(cluster_labels))} unique labels")
 
         except Exception as e:
