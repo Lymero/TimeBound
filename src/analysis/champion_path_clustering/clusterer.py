@@ -6,7 +6,6 @@ based on their win rate vs game length graphs.
 """
 
 import json
-import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -22,13 +21,9 @@ from .clustering_types import ClusterStats
 from .factory import ClusteringStrategyFactory
 from .strategies.base import ClusteringStrategy
 
-DEFAULT_SVG_PATHS_FILE = os.environ.get(
-    "WINRATES_SVG_PATHS_FILE", "data/champion_svg_paths.json"
-)
-DEFAULT_CORRELATION_THRESHOLD = float(
-    os.environ.get("WINRATES_CORRELATION_THRESHOLD", "0.8")
-)
-DEFAULT_CLUSTER_RATIO = float(os.environ.get("WINRATES_CLUSTER_RATIO", "0.1"))
+DEFAULT_SVG_PATHS_FILE = "data/champion_svg_paths.json"
+DEFAULT_CORRELATION_THRESHOLD = 0.8
+DEFAULT_CLUSTER_RATIO = 0.1
 
 
 class ChampionPathClusterer:
@@ -141,9 +136,6 @@ class ChampionPathClusterer:
         for champion in champions:
             self.correlation_matrix[champion][champion] = 1.0
 
-        # Calculate total comparisons for logging
-        total_comparisons = len(champions) * (len(champions) - 1) // 2
-
         pairs = [
             (champ1, champ2)
             for i, champ1 in enumerate(champions)
@@ -158,7 +150,7 @@ class ChampionPathClusterer:
             self.correlation_matrix[champ1][champ2] = correlation
             self.correlation_matrix[champ2][champ1] = correlation
 
-        info(f"Computed correlation matrix with {total_comparisons} comparisons")
+        info("Computed correlation matrix")
 
     def _determine_optimal_cluster_count(
         self, n_clusters: int, champions: list[str]
@@ -205,22 +197,12 @@ class ChampionPathClusterer:
 
             champions = list(self.correlation_matrix.keys())
             n_clusters = self._determine_optimal_cluster_count(n_clusters, champions)
-
-            # Pass correlation_threshold to threshold clustering strategy
-            if (
-                hasattr(self.clustering_strategy, "__class__")
-                and self.clustering_strategy.__class__.__name__
-                == "ThresholdClusteringStrategy"
-            ):
-                self.clusters = self.clustering_strategy.cluster(
-                    self.correlation_matrix,
-                    n_clusters,
-                    min_correlation=self.correlation_threshold,
-                )
-            else:
-                self.clusters = self.clustering_strategy.cluster(
-                    self.correlation_matrix, n_clusters
-                )
+            
+            self.clusters = self.clustering_strategy.cluster(
+                self.correlation_matrix,
+                n_clusters,
+                correlation_threshold=self.correlation_threshold,
+            )
 
             if evaluate:
                 silhouette_avg = self.compute_silhouette_score()

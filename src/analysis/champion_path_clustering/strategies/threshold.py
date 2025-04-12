@@ -19,7 +19,7 @@ class ThresholdClusteringStrategy(BaseClusteringStrategy):
         self,
         correlation_matrix: dict[str, dict[str, float]],
         n_clusters: int,
-        min_correlation: float = 0.7,
+        correlation_threshold: float = 0.7,
     ) -> dict[int, list[str]]:
         """
         Cluster champions based on their graph similarities using a threshold-based approach.
@@ -30,14 +30,14 @@ class ThresholdClusteringStrategy(BaseClusteringStrategy):
         Args:
             correlation_matrix: Dictionary mapping champion names to dictionaries of correlations
             n_clusters: Target number of clusters (used as a reference, not guaranteed)
-            min_correlation: Minimum correlation required between champions in the same cluster
+            correlation_threshold: Minimum correlation required between champions in the same cluster
 
         Returns:
             Dictionary mapping cluster IDs to lists of champions
         """
         champions = list(correlation_matrix.keys())
         info(
-            f"Threshold clustering {len(champions)} champions with min_correlation={min_correlation}"
+            f"Threshold clustering {len(champions)} champions with correlation_threshold={correlation_threshold}"
         )
 
         # Create a graph where edges represent correlations above the threshold
@@ -46,7 +46,7 @@ class ThresholdClusteringStrategy(BaseClusteringStrategy):
             for champ2 in champions:
                 if (
                     champ1 != champ2
-                    and correlation_matrix[champ1][champ2] >= min_correlation
+                    and correlation_matrix[champ1][champ2] >= correlation_threshold
                 ):
                     graph[champ1].add(champ2)
 
@@ -78,7 +78,7 @@ class ThresholdClusteringStrategy(BaseClusteringStrategy):
                     candidate
                     for candidate in candidates
                     if all(
-                        correlation_matrix[candidate][member] >= min_correlation
+                        correlation_matrix[candidate][member] >= correlation_threshold
                         for member in cluster
                     )
                 }

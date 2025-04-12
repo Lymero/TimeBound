@@ -13,7 +13,10 @@ class ClusteringStrategy(Protocol):
     """Protocol defining the interface for clustering strategies."""
 
     def cluster(
-        self, correlation_matrix: dict[str, dict[str, float]], n_clusters: int
+        self, 
+        correlation_matrix: dict[str, dict[str, float]], 
+        n_clusters: int,
+        correlation_threshold: float = 0.7
     ) -> dict[int, list[str]]:
         """
         Cluster champions based on their graph similarities.
@@ -21,6 +24,7 @@ class ClusteringStrategy(Protocol):
         Args:
             correlation_matrix: Dictionary mapping champion names to dictionaries of correlations
             n_clusters: Number of clusters to create
+            correlation_threshold: Minimum correlation required for champions to be similar
 
         Returns:
             Dictionary mapping cluster IDs to lists of champions
@@ -95,7 +99,10 @@ class BaseClusteringStrategy(ABC):
 
     @abstractmethod
     def cluster(
-        self, correlation_matrix: dict[str, dict[str, float]], n_clusters: int
+        self, 
+        correlation_matrix: dict[str, dict[str, float]], 
+        n_clusters: int,
+        correlation_threshold: float = 0.7
     ) -> dict[int, list[str]]:
         """
         Cluster champions based on their graph similarities.
@@ -103,6 +110,7 @@ class BaseClusteringStrategy(ABC):
         Args:
             correlation_matrix: Dictionary mapping champion names to dictionaries of correlations
             n_clusters: Number of clusters to create
+            correlation_threshold: Minimum correlation required for champions to be similar
 
         Returns:
             Dictionary mapping cluster IDs to lists of champions
