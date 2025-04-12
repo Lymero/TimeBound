@@ -1,5 +1,5 @@
 {
-  "5": [
+  "6": [
     "aatrox",
     "aurora",
     "draven",
@@ -14,7 +14,6 @@
     "lulu",
     "mel",
     "naafiri",
-    "nidalee",
     "pantheon",
     "pyke",
     "rammus",
@@ -23,13 +22,11 @@
     "shaco",
     "soraka",
     "sylas",
-    "tahmkench",
-    "tryndamere",
     "zoe",
     "akali",
     "akshan"
   ],
-  "3": [
+  "0": [
     "alistar",
     "ambessa",
     "annie",
@@ -44,7 +41,6 @@
     "graves",
     "gwen",
     "jax",
-    "karthus",
     "kassadin",
     "kayle",
     "kayn",
@@ -58,29 +54,23 @@
     "rell",
     "renata",
     "rumble",
-    "smolder",
     "taric",
     "teemo",
     "vayne",
     "vi",
-    "vladimir",
     "yone",
-    "yuumi",
     "zeri"
   ],
-  "0": [
+  "7": [
     "amumu",
     "bard",
-    "fiddlesticks",
     "gnar",
     "janna",
-    "lillia",
-    "nami",
     "syndra",
     "urgot",
     "ahri"
   ],
-  "6": [
+  "10": [
     "anivia",
     "ashe",
     "diana",
@@ -89,14 +79,12 @@
     "missfortune",
     "morgana",
     "nunu",
-    "sett",
     "sion",
     "trundle",
-    "yasuo",
     "ziggs",
     "zyra"
   ],
-  "4": [
+  "5": [
     "belveth",
     "corki",
     "ekko",
@@ -114,6 +102,8 @@
     "neeko",
     "nocturne",
     "swain",
+    "tahmkench",
+    "tryndamere",
     "varus",
     "velkoz",
     "vex",
@@ -121,10 +111,8 @@
     "xerath",
     "yorick"
   ],
-  "2": [
+  "9": [
     "blitzcrank",
-    "ivern",
-    "kennen",
     "nautilus",
     "quinn",
     "rengar",
@@ -132,7 +120,7 @@
     "skarner",
     "twitch"
   ],
-  "10": [
+  "3": [
     "brand",
     "camille",
     "cassiopeia",
@@ -154,10 +142,9 @@
     "veigar",
     "viktor",
     "wukong",
-    "xinzhao",
     "zilean"
   ],
-  "17": [
+  "18": [
     "briar"
   ],
   "1": [
@@ -166,32 +153,47 @@
     "jhin",
     "kalista",
     "khazix",
+    "nidalee",
     "qiyana",
     "samira",
     "shen",
     "thresh",
     "tristana",
-    "viego",
     "xayah",
     "zed"
+  ],
+  "8": [
+    "fiddlesticks",
+    "lillia",
+    "nami"
   ],
   "15": [
     "gangplank"
   ],
-  "13": [
+  "4": [
+    "ivern",
+    "kennen"
+  ],
+  "19": [
     "jarvaniv"
   ],
-  "16": [
+  "13": [
     "kaisa"
+  ],
+  "14": [
+    "karthus",
+    "smolder",
+    "vladimir",
+    "yuumi"
   ],
   "11": [
     "kindred"
   ],
-  "7": [
+  "16": [
     "mordekaiser",
     "olaf"
   ],
-  "14": [
+  "21": [
     "nasus",
     "talon"
   ],
@@ -199,10 +201,16 @@
     "sejuani",
     "zac"
   ],
-  "8": [
+  "17": [
     "seraphine"
   ],
-  "9": [
-    "volibear"
+  "2": [
+    "sett",
+    "volibear",
+    "xinzhao",
+    "yasuo"
+  ],
+  "20": [
+    "viego"
   ]
 }
